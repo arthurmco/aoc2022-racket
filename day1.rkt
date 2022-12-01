@@ -32,11 +32,21 @@
   (let ([max-value (foldl max 0 (vector->list calories-vec))])
     (vector-member max-value calories-vec)))
 
+(define (get-top-3-calories calories-sum)
+  (vector-take (vector-sort calories-sum >) 3))
+
 (define (run-script filename)
   (let* ([calories (split-calories-by-elf (open-calories-file filename))]
          [calories-total (sum-calories-per-elf calories)])
     (printf "Elf with most calories is ~A, with ~A\n"
             (+ 1 (get-biggest-calorie-elf calories-total))
             (vector-ref calories-total (get-biggest-calorie-elf calories-total)))))
+  
+(define (run-script-2 filename)
+  (let* ([calories (split-calories-by-elf (open-calories-file filename))]
+         [calories-total (sum-calories-per-elf calories)])
+    (printf "Top 3 calories are ~A, with their sum being ~A\n"
+            (get-top-3-calories calories-total)
+            (foldl + 0 (vector->list (get-top-3-calories calories-total))))))
   
 
