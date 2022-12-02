@@ -48,5 +48,3 @@
     (printf "Top 3 calories are ~A, with their sum being ~A\n"
             (get-top-3-calories calories-total)
             (foldl + 0 (vector->list (get-top-3-calories calories-total))))))
-  
-
