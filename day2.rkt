@@ -8,9 +8,9 @@
           ["C" 'scissors])
 
         (match (second line)
-          ["X" 'rock]
-          ["Y" 'paper]
-          ["Z" 'scissors])))
+          ["X" 'lose]
+          ["Y" 'draw]
+          ["Z" 'win])))
 
 (define (strategy-line-victory? strategy)
   (match strategy
@@ -25,6 +25,22 @@
     [(cons 'scissors 'scissors) #t]
     [(cons 'paper 'paper) #t]
     [_ #f]))
+
+
+(define (strategy-line-decide-choice strategy)
+  (match strategy
+    [(cons 'rock 'draw) (cons 'rock 'rock)]
+    [(cons 'paper 'draw) (cons 'paper 'paper)]
+    [(cons 'scissors 'draw) (cons 'scissors 'scissors)]
+
+    [(cons 'rock 'lose) (cons 'rock 'scissors)]
+    [(cons 'paper 'lose) (cons 'paper 'rock)]
+    [(cons 'scissors 'lose) (cons 'scissors 'paper)]
+
+    [(cons 'rock 'win) (cons 'rock 'paper)]
+    [(cons 'paper 'win) (cons 'paper 'scissors)]
+    [(cons 'scissors 'win) (cons 'scissors 'rock)]
+    [_ strategy]))
 
 (define (strategy-score strategy)
   (+
@@ -52,6 +68,12 @@
 
 (define (run-script filename)
   (let* ([strategy (open-strategy-file filename)]
+         [scores (map strategy-score strategy)]
+         [sum (apply + scores)])
+    (printf "Total score is ~A\n" sum)))
+
+(define (run-script-2 filename)
+  (let* ([strategy (map strategy-line-decide-choice (open-strategy-file filename))]
          [scores (map strategy-score strategy)]
          [sum (apply + scores)])
     (printf "Total score is ~A\n" sum)))
