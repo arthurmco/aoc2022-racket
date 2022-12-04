@@ -41,6 +41,26 @@
 
 
 
+; '((2 . 4) (6 . 8))
+; 2 3 4
+;       / 6 7 8
+;
+;
+; '((5 . 7) (7 . 9))
+; 5 6 7
+;     7 8 9 
+(define (one-pair-overlaps-another? section)
+  (let ([first-pair (first section)]
+        [second-pair (second section)])
+    (let ([r1 (car first-pair)]
+          [r2 (car second-pair)])
+
+      (and (<= r1 (+ r2 (pair-difference second-pair)))
+           (>= (+ r1 (pair-difference first-pair)) r2)))))
+      
+
+
+
 (define (run-script filename)
   (let* ([sections (open-section-file filename)]
          [pair-map (map one-pair-fully-contains-another? sections)]
@@ -48,3 +68,11 @@
 
     (printf "Number of sections that one pair fully contains the other: ~A\n"
             count-fully-contains)))
+
+(define (run-script-2 filename)
+  (let* ([sections (open-section-file filename)]
+         [pair-map (map one-pair-overlaps-another? sections)]
+         [count-overlaps (count identity pair-map)])
+
+    (printf "Number of sections that one pair overlaps the other: ~A\n"
+            count-overlaps)))
