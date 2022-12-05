@@ -64,13 +64,27 @@
          [new-to (cons (car list-from) list-to)])
     (dict-set (dict-set crate-dict to new-to) from new-from)))
 
-(define (execute-instruction instruction crate-dict)
+(define (move-multiple-crates crate-dict n from to)
+  (let* ([list-from (dict-ref crate-dict from)]
+         [list-to (dict-ref crate-dict to)]
+         [new-from (drop list-from n)]
+         [new-to (append (take list-from n) list-to)])
+    (dict-set (dict-set crate-dict to new-to) from new-from)))
+
+(define (execute-instruction-9000 instruction crate-dict)
   (let ([times (range (instruction-move instruction))])
     (foldl (lambda (t dict)
              (move-single-crate dict
                                 (instruction-from instruction)
                                 (instruction-to instruction)))
            crate-dict times)))
+
+(define (execute-instruction-9001 instruction crate-dict)
+  (let ([times (instruction-move instruction)])
+    (move-multiple-crates
+     crate-dict times 
+     (instruction-from instruction)
+     (instruction-to instruction))))
 
 (define (open-crate-file filename)
   (call-with-input-file filename
@@ -93,5 +107,13 @@
   (let* ([crate-info (open-crate-file filename)]
          [crate-initial-state (car crate-info)]
          [crate-instructions (cdr crate-info)]
-         [crate-final-state (foldl execute-instruction crate-initial-state crate-instructions)])
+         [crate-final-state (foldl execute-instruction-9000 crate-initial-state crate-instructions)])
     (printf "Elves crate state message: '~A'\n" (make-elves-crate-state-message crate-final-state))))
+
+(define (run-script-2 filename)
+  (let* ([crate-info (open-crate-file filename)]
+         [crate-initial-state (car crate-info)]
+         [crate-instructions (cdr crate-info)]
+         [crate-final-state (foldl execute-instruction-9001 crate-initial-state crate-instructions)])
+    (printf "Elves crate state message with the new schema: '~A'\n"
+            (make-elves-crate-state-message crate-final-state))))
