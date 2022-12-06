@@ -13,18 +13,26 @@
       (read-message-line cfile))))
 
 
-(define (find-four-non-repeating-chars message start)
+(define (find-x-non-repeating-chars message start num)
   (if (< (length
-          (remove-duplicates (string->list (substring message 0 4))))
-         4)
-      (find-four-non-repeating-chars (substring message 1) (+ start 1))
-      (+ start 4)))
+          (remove-duplicates (string->list (substring message 0 num))))
+         num)
+      (find-x-non-repeating-chars (substring message 1) (+ start 1) num)
+      (+ start num)))
 
 (define (find-start-of-packet-marker message)
-  (find-four-non-repeating-chars message 0))
+  (find-x-non-repeating-chars message 0 4))
+
+(define (find-start-of-message-marker message)
+  (find-x-non-repeating-chars message 0 14))
 
 
 (define (run-script filename)
   (let* ([msg (car (open-message-file filename))]
          [start-of-packet (find-start-of-packet-marker msg)])
     (printf "Start of packet marker at char ~A\n" start-of-packet)))
+
+(define (run-script-2 filename)
+  (let* ([msg (car (open-message-file filename))]
+         [start-of-message (find-start-of-message-marker msg)])
+    (printf "Start of message marker at char ~A\n" start-of-message)))
