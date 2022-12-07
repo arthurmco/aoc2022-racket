@@ -109,3 +109,30 @@
          [dir-sizes (get-device-dirs-size tree-dict)]
          [result (apply + (filter (lambda (v) (< v 100000)) dir-sizes))])
     (printf "Total sizes of dirs < 100000 units: ~A\n" result)))
+
+
+(define (get-free-space history-dict)
+  (- 70000000 (get-full-directory-size history-dict "/")))
+
+(define (get-space-needed-for-update history-dict)
+  (max 0 (- 30000000 (get-free-space history-dict))))
+
+
+(define (get-size-of-smallest-deletable-directory history-dict)
+  (caar
+   (sort
+    (filter
+     (lambda (v) (> (cdr v) 0))
+     (map
+      (lambda (v) (cons v (- v (get-space-needed-for-update history-dict))))
+      (get-device-dirs-size history-dict)))   
+    (lambda (a b) (< (cdr a) (cdr b))))))
+
+
+(define (run-script-2 filename)
+  (let* ([commands (open-commands-file filename)]
+         [tree-dict (fourth (foldl iterate-commands '() commands))]
+         [result (get-size-of-smallest-deletable-directory tree-dict)])
+    (printf "Total sizes of smallest deletable directory ~A\n" result)))
+
+
