@@ -1,5 +1,7 @@
 #lang racket
 
+(require json)
+
 (define (parse-head-motion-line cline)
   (let ([linestr (string-split cline " ")])
     (cons
@@ -101,6 +103,14 @@
            (list (list (car head-knot) ntail)) (drop rope-elements 2))])
     (cons (caar subropes) (map cadr subropes))))
 
+(define (json-encode-cons c)
+  (list (car c) (cdr c)))
+
+(define (rope->json r)
+  (make-hash (list (cons 'head (json-encode-cons (rope-head r)))
+                   (cons 'middle (map json-encode-cons (rope-middle r)))
+                   (cons 'tail (json-encode-cons (rope-tail r))))))
+
 (define (iterate-direction-big-rope direction rope-list)
   (let* ([last-rope (car rope-list)]
          [knot-list (rope->list last-rope)]
@@ -112,5 +122,15 @@
 (define (run-script-2 filename)
   (let* ([directions (decompose-motions-into-directions (open-head-motion-file filename))]
          [ropes (foldl iterate-direction-big-rope (list (make-rope-start 9)) directions)]
+         [out (jsexpr->string (map rope->json (reverse ropes)))]
          [tail-path (remove-duplicates (map rope-tail ropes))])
-    (printf "Positions the tail of the big rope visited once: ~A" (length tail-path))))
+    (printf "~A" out)))
+
+(define f
+  (command-line
+   #:program "day9"
+   #:args (filename)
+   filename))
+
+(run-script-2 f)
+
