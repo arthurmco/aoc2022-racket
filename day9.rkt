@@ -16,7 +16,7 @@
         '()
         (cons (parse-head-motion-line cline) (read-head-motion-line cfile)))))
 
-(struct knot (head tail) #:transparent)
+(struct rope (head middle tail) #:transparent)
 
 (define (tail-touching-head? head tail)
   (let ([xdist (abs (- (car head) (car tail)))]
@@ -44,9 +44,9 @@
     [(= n 1) (list val)]
     [else (cons val (repeat (- n 1) val))]))
 
-(define (move-head knot direction)
-  (let ([kheadx (car (knot-head knot))]
-        [kheady (cdr (knot-head knot))])
+(define (move-head rope direction)
+  (let ([kheadx (car (rope-head rope))]
+        [kheady (cdr (rope-head rope))])
     (cons (+ kheadx
              (match direction
                ['right 1]
@@ -65,18 +65,52 @@
           (repeat (cdr instr) (car instr)))
         head-motion-info )))
 
-(define (make-knot-start)
-  (knot (cons 0 0) (cons 0 0)))
+(define (make-rope-start elements)
+  (rope (cons 0 0) (repeat (- elements 1) (cons 0 0)) (cons 0 0)))
 
-(define (iterate-direction direction knot-list)
-  (let* ([last-knot (car knot-list)]
-         [nhead (move-head last-knot direction)]
-         [ntail (move-tail-closer-to-head nhead (knot-tail last-knot))])
-    (cons (knot nhead ntail) knot-list)))
-
+(define (iterate-direction direction rope-list)
+  (let* ([last-rope (car rope-list)]
+         [nhead (move-head last-rope direction)]
+         [ntail (move-tail-closer-to-head nhead (rope-tail last-rope))])
+    (cons (rope nhead '() ntail) rope-list)))
 
 (define (run-script filename)
   (let* ([directions (decompose-motions-into-directions (open-head-motion-file filename))]
-         [knots (foldl iterate-direction (list (make-knot-start)) directions)]
-         [tail-path (remove-duplicates (map knot-tail knots))])
+         [ropes (foldl iterate-direction (list (make-rope-start 1)) directions)]
+         [tail-path (remove-duplicates (map rope-tail ropes))])
     (printf "Positions the tail visited once: ~A" (length tail-path))))
+
+
+(define (rope->list rope)
+  (append (cons (rope-head rope) (rope-middle rope)) (list (rope-tail rope))))
+
+(define (list->rope l)
+  (apply rope (car l) (drop-right (cdr l) 1) (take-right l 1)))
+
+(define (move-big-rope-tail-closer-to-head head rope-remainder)
+  (let* ([rope-elements (cons head rope-remainder)]
+         [head-knot (take rope-elements 2)]
+         [ntail (apply move-tail-closer-to-head head-knot)]
+         [subropes 
+          (foldl
+           (lambda (rope-item rope-sliding-window)
+             (let* ([last-knot (cadr (last rope-sliding-window))]
+                    [ihead-knot (list last-knot rope-item)]
+                    [intail (apply move-tail-closer-to-head ihead-knot)])
+               (append rope-sliding-window (list (list (car ihead-knot) intail)))))
+           (list (list (car head-knot) ntail)) (drop rope-elements 2))])
+    (cons (caar subropes) (map cadr subropes))))
+
+(define (iterate-direction-big-rope direction rope-list)
+  (let* ([last-rope (car rope-list)]
+         [knot-list (rope->list last-rope)]
+         [nhead (move-head last-rope direction)]
+         [ntail (cdr knot-list)])
+    (cons (list->rope (move-big-rope-tail-closer-to-head nhead ntail)) rope-list)))
+
+
+(define (run-script-2 filename)
+  (let* ([directions (decompose-motions-into-directions (open-head-motion-file filename))]
+         [ropes (foldl iterate-direction-big-rope (list (make-rope-start 9)) directions)]
+         [tail-path (remove-duplicates (map rope-tail ropes))])
+    (printf "Positions the tail of the big rope visited once: ~A" (length tail-path))))
