@@ -96,9 +96,11 @@
                 (parse-monkey-info
                  (if (null? monkey-rest) '() (cdr monkey-rest)))))))
 
+  (define (normal-relief v)
+    (floor (/ v 3)))
 
-  (define (get-item-worry-levels monkey given-items)
-    (map (compose (lambda (v) (floor (/ v 3)))
+  (define (get-item-worry-levels monkey given-items relief-fn)
+    (map (compose relief-fn
                   (monkey-operation monkey))         
          (append (monkey-items monkey) given-items)))
   
@@ -122,12 +124,13 @@
        (hash-update gihash (monkey-throw-at-monkey-true m) (curry append worry-true) '())
        (monkey-throw-at-monkey-false m) (curry append worry-false) '())))
   
-  (define (iterate-monkey-list monkey-list)
+  (define (iterate-monkey-list monkey-list relief-fn)
     (let ([new-worry-levels (foldl
              (lambda (monkey-data mstate)
                (let* ([given-items (hash-ref (car mstate) (monkey-id monkey-data) '())]
                       [worry-levels (get-item-worry-levels
-                                     monkey-data given-items)]
+                                     monkey-data given-items
+                                     relief-fn)]
                       [items (update-monkey-given-items
                               (hash-set (car mstate) (monkey-id monkey-data) '())
                               worry-levels
@@ -145,10 +148,13 @@
               (hash-ref (cdr new-worry-levels) (monkey-id m) '())))
            monkey-list)))
 
-  (define (iterate-monkey-list-n-times monkey-list n)
+  (define (iterate-monkey-list-n-times monkey-list n relief-fn)
+    (when (= (remainder n 20) 0)
+      (display n)
+      (display "\n"))
     (if (<= n 0)
         monkey-list
-        (iterate-monkey-list-n-times (iterate-monkey-list monkey-list) (- n 1))))
+        (iterate-monkey-list-n-times (iterate-monkey-list monkey-list relief-fn) (- n 1) relief-fn)))
 
   (define (get-monkey-business monkey-list)
     (apply * (take (sort (map monkey-inspection-count monkey-list) >) 2)))
@@ -156,8 +162,12 @@
   
   (define (run-script filename)
     (let* ([monkey-list (parse-monkey-info (open-monkey-def-file filename))]
-           [monkey-after (iterate-monkey-list-n-times monkey-list 20)])
+           [monkey-after (iterate-monkey-list-n-times monkey-list 20 normal-relief)])
       (printf "Monkey business total: ~A\n" (get-monkey-business monkey-after))))
 
   (define (run-script-2 filename)
-    (display #t)))
+    (let* ([monkey-list (parse-monkey-info (open-monkey-def-file filename))]
+           [monkey-after (iterate-monkey-list-n-times monkey-list 10000 identity)])
+      (printf "Monkey business total (with extra worry): ~A\n" (get-monkey-business monkey-after))))
+
+  )
