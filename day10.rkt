@@ -1,4 +1,7 @@
 (module day10 racket
+  (provide run-script)
+  (provide run-script-2)
+  
   (define (parse-cpu-instruction cline)
     (let ([instr-parts (string-split cline " ")])
       (match (car instr-parts)
@@ -101,7 +104,6 @@
                                 (if pixel #\# #\.)) screen)])
         (string-join (create-screen-lines screen-data) "\n")))
 
-    
     (define (run-script-2 filename)
       (let* ([cpu-instrs (open-cpu-instructions-file filename)]
              [instr-cycle-map (map (lambda (v) (vector (cycle-count (car v)) v)) cpu-instrs)]
